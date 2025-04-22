@@ -5,7 +5,6 @@ import PriceChart from './components/PriceChart';
 
 const App: React.FC = () => {
   const [coin, setCoin] = useState('');
-  const [coinId, setCoinId] = useState('');
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
 
@@ -20,7 +19,6 @@ const App: React.FC = () => {
         return;
       }
 
-      setCoinId(found.id);
 
       // Fetch current price
       const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${found.id}&vs_currencies=usd`);
