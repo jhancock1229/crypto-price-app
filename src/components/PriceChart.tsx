@@ -1,19 +1,21 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-type Props = {
+interface PriceChartProps {
   data: { time: string; price: number }[];
-};
+}
 
-const PriceChart = ({ data }: Props) => {
+const PriceChart: React.FC<PriceChartProps> = ({ data }) => {
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data}>
-        <XAxis dataKey="time" />
-        <YAxis />
-        <Tooltip />
-        <Line type="monotone" dataKey="price" stroke="#1db954" strokeWidth={2} dot={false} />
-      </LineChart>
-    </ResponsiveContainer>
+    <div style={{ marginTop: '2rem', height: '300px' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data}>
+          <XAxis dataKey="time" />
+          <YAxis domain={['auto', 'auto']} />
+          <Tooltip />
+          <Line type="monotone" dataKey="price" stroke="#8884d8" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 
