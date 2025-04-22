@@ -6,14 +6,16 @@ import RangeToggle from './components/RangeToggle';
 
 const App: React.FC = () => {
   const [coin, setCoin] = useState('');
-  const [coinId, setCoinId] = useState(''); // New state to store the coin ID
+  const [coinId, setCoinId] = useState(''); // State to store the coin ID
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
-  const [selectedRange, setSelectedRange] = useState('1W'); // default to 1 week
+  const [selectedRange, setSelectedRange] = useState('1W'); // Default to 1 week
 
-  // Function to fetch chart data based on coin ID and selected range
+  // Function to fetch chart data based on coinId and selected range
   const fetchChartData = async (coinId: string, range: string) => {
-    let days = '7';
+    if (!coinId) return; // Return if coinId is empty
+
+    let days = '7'; // Default to 7 days (1 week)
 
     switch (range) {
       case '1D': days = '1'; break;
@@ -21,22 +23,28 @@ const App: React.FC = () => {
       case '1W': days = '7'; break;
       case '1M': days = '30'; break;
       case '1Y': days = '365'; break;
-      case 'YTD': days = '365'; break; // Fallback to 365 for YTD
+      case 'YTD': days = '365'; break; // Fallback to 365 days for YTD
       case 'ALL': days = 'max'; break;
     }
 
-    const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`);
-    const json = await res.json();
+    try {
+      const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`);
+      const json = await res.json();
 
-    const formatted = json.prices.map((p: [number, number]) => ({
-      time: new Date(p[0]).toLocaleDateString(),
-      price: p[1],
-    }));
+      // Format the chart data
+      const formatted = json.prices.map((p: [number, number]) => ({
+        time: new Date(p[0]).toLocaleDateString(),
+        price: p[1],
+      }));
 
-    setChartData(formatted);
+      setChartData(formatted); // Update chartData
+    } catch (err) {
+      console.error(err);
+      alert('Failed to fetch chart data');
+    }
   };
 
-  // Function to handle search, find the coin and fetch its price & chart data
+  // Function to handle the search
   const handleSearch = async () => {
     if (!coin) {
       alert('Please enter a coin name or symbol');
@@ -53,13 +61,14 @@ const App: React.FC = () => {
         return;
       }
 
-      setCoinId(found.id); // Store the coin ID for future use
+      setCoinId(found.id); // Store the coinId for future requests
 
+      // Fetch the current price of the coin
       const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${found.id}&vs_currencies=usd`);
       const priceJson = await priceRes.json();
       setCurrentPrice(priceJson[found.id].usd);
 
-      // Fetch chart data for the initial range (default is 1 week)
+      // Fetch chart data with default range (1W)
       await fetchChartData(found.id, selectedRange);
     } catch (err) {
       console.error(err);
@@ -67,10 +76,10 @@ const App: React.FC = () => {
     }
   };
 
-  // useEffect to refetch chart data when selectedRange changes
+  // useEffect to refetch chart data when selectedRange or coinId changes
   useEffect(() => {
     if (!coinId) return; // Only fetch data if a valid coinId exists
-    fetchChartData(coinId, selectedRange); // Refetch chart data based on the selected range
+    fetchChartData(coinId, selectedRange); // Refetch chart data when range or coinId changes
   }, [selectedRange, coinId]); // Runs when selectedRange or coinId changes
 
   return (
