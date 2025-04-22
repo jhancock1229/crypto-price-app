@@ -1,131 +1,48 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import SearchBar from './components/SearchBar';
-import PriceDisplay from './components/PriceDisplay';
 import PriceChart from './components/PriceChart';
-import RangeToggle from './components/RangeToggle';
-import { Coin } from './types';
 
-const App: React.FC = () => {
+interface Coin {
+  id: string;
+  name: string;
+  symbol: string;
+}
+
+function App() {
   const [query, setQuery] = useState('');
-  const [coinId, setCoinId] = useState('');
-  const [coinName, setCoinName] = useState('');
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [selectedRange, setSelectedRange] = useState('1W');
-  const [loadingChart, setLoadingChart] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [coin, setCoin] = useState<Coin | null>(null);
+  const [allCoins, setAllCoins] = useState<Coin[]>([]);
+  const [selectedRange, setSelectedRange] = useState('1');
 
-  const closeDropdown = () => setDropdownOpen(false);
-  const openDropdown = () => setDropdownOpen(true);
-
-  // In-memory cache to prevent redundant requests
-  const chartCache = React.useRef<{ [range: string]: any[] }>({});
-
-  const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-  const fetchChartData = useCallback(async (id: string, range: string) => {
-    if (!id) return;
-
-    // Use cache if available
-    if (chartCache.current[range]) {
-      console.log(`Using cached chart data for ${range}`);
-      setChartData(chartCache.current[range]);
-      return;
-    }
-
-    let days = '7';
-    switch (range) {
-      case '1D': days = '1'; break;
-      case '5D': days = '5'; break;
-      case '1W': days = '7'; break;
-      case '1M': days = '30'; break;
-      case '1Y': days = '365'; break;
-      case 'YTD': days = '365'; break;
-      case 'ALL': days = 'max'; break;
-    }
-
-    try {
-      setLoadingChart(true);
-      await delay(1000); // slow down fetches to avoid API throttling
-
-      const url = `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Failed chart fetch for ${id}`);
-
-      const json = await res.json();
-      const formatted = json.prices.map((p: [number, number]) => ({
-        time: new Date(p[0]).toLocaleDateString(),
-        price: p[1],
-      }));
-
-      chartCache.current[range] = formatted;
-      setChartData(formatted);
-    } catch (err) {
-      console.error(err);
-      alert('Error fetching chart data. Please wait a few seconds and try again.');
-    } finally {
-      setLoadingChart(false);
-    }
+  useEffect(() => {
+    const fetchCoins = async () => {
+      const res = await fetch('https://api.coingecko.com/api/v3/coins/list');
+      const data = await res.json();
+      setAllCoins(data);
+    };
+    fetchCoins();
   }, []);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-
-    try {
-      const listRes = await fetch(`https://api.coingecko.com/api/v3/coins/list`);
-      const coins = await listRes.json();
-
-      const match = coins.find((c: any) =>
+  const handleSearch = () => {
+    const found = allCoins.find(
+      (c) =>
         c.name.toLowerCase() === query.toLowerCase() ||
         c.symbol.toLowerCase() === query.toLowerCase()
-      );
-
-      if (!match) {
-        alert('Coin not found');
-        return;
-      }
-
-      const newCoinId = match.id;
-      setCoinId(newCoinId);
-      setCoinName(match.name);
-
-      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${newCoinId}&vs_currencies=usd`);
-      const priceJson = await priceRes.json();
-
-      if (!priceJson[newCoinId]) throw new Error('Price not found');
-      setCurrentPrice(priceJson[newCoinId].usd);
-
-      chartCache.current = {}; // clear previous cache
-    } catch (err) {
-      console.error(err);
-      alert('Failed to search for coin.');
+    );
+    if (found) {
+      setCoin(found);
+    } else {
+      alert('Coin not found.');
     }
   };
 
-  useEffect(() => {
-    if (coinId) {
-      fetchChartData(coinId, selectedRange);
-    }
-  }, [coinId, selectedRange, fetchChartData]);
-
-  const [allCoins, setAllCoins] = useState<Coin[]>([]);
-
-  useEffect(() => {
-    const fetchAllCoins = async () => {
-      try {
-        const res = await fetch('https://api.coingecko.com/api/v3/coins/list');
-        const coins = await res.json();
-        setAllCoins(coins);
-      } catch (err) {
-        console.error('Error fetching coins:', err);
-      }
-    };
-    fetchAllCoins();
-  }, []);
+  const closeDropdown = () => {
+    // No internal dropdown state in App, but needed as prop to SearchBar
+  };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>📊 Crypto Price Tracker</h1>
+    <div style={{ padding: '2rem' }}>
+      <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Crypto Price Viewer</h1>
       <SearchBar
         value={query}
         onChange={setQuery}
@@ -134,18 +51,38 @@ const App: React.FC = () => {
         closeDropdown={closeDropdown}
       />
 
-
-      {currentPrice !== null && (
+      {coin && (
         <>
-          <PriceDisplay coin={coinName} price={currentPrice} />
-          <RangeToggle selected={selectedRange} onSelect={(range) => {
-            if (!loadingChart) setSelectedRange(range);
-          }} />
-          {loadingChart ? <p>Loading chart...</p> : <PriceChart data={chartData} />}
+          <h2>{coin.name} ({coin.symbol.toUpperCase()})</h2>
+          <div style={{ margin: '1rem 0' }}>
+            {['1', '5', '7', '30', '365', 'ytd', 'max'].map((range) => (
+              <button
+                key={range}
+                onClick={() => setSelectedRange(range)}
+                style={{
+                  marginRight: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: selectedRange === range ? '#4F46E5' : '#E5E7EB',
+                  color: selectedRange === range ? '#fff' : '#000',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                }}
+              >
+                {range === '1' ? '1 Day' :
+                 range === '5' ? '5 Days' :
+                 range === '7' ? '1 Week' :
+                 range === '30' ? '1 Month' :
+                 range === '365' ? '1 Year' :
+                 range === 'ytd' ? 'YTD' : 'All'}
+              </button>
+            ))}
+          </div>
+          <PriceChart coinId={coin.id} range={selectedRange} />
         </>
       )}
     </div>
   );
-};
+}
 
 export default App;
