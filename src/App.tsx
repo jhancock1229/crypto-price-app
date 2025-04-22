@@ -6,10 +6,12 @@ import RangeToggle from './components/RangeToggle';
 
 const App: React.FC = () => {
   const [coin, setCoin] = useState('');
+  const [coinId, setCoinId] = useState(''); // New state to store the coin ID
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
   const [selectedRange, setSelectedRange] = useState('1W'); // default to 1 week
 
+  // Function to fetch chart data based on coin ID and selected range
   const fetchChartData = async (coinId: string, range: string) => {
     let days = '7';
 
@@ -19,7 +21,7 @@ const App: React.FC = () => {
       case '1W': days = '7'; break;
       case '1M': days = '30'; break;
       case '1Y': days = '365'; break;
-      case 'YTD': days = '365'; break; // Not supported by CoinGecko, fallback to 365
+      case 'YTD': days = '365'; break; // Fallback to 365 for YTD
       case 'ALL': days = 'max'; break;
     }
 
@@ -34,6 +36,7 @@ const App: React.FC = () => {
     setChartData(formatted);
   };
 
+  // Function to handle search, find the coin and fetch its price & chart data
   const handleSearch = async () => {
     if (!coin) {
       alert('Please enter a coin name or symbol');
@@ -50,10 +53,13 @@ const App: React.FC = () => {
         return;
       }
 
+      setCoinId(found.id); // Store the coin ID for future use
+
       const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${found.id}&vs_currencies=usd`);
       const priceJson = await priceRes.json();
       setCurrentPrice(priceJson[found.id].usd);
 
+      // Fetch chart data for the initial range (default is 1 week)
       await fetchChartData(found.id, selectedRange);
     } catch (err) {
       console.error(err);
@@ -63,9 +69,9 @@ const App: React.FC = () => {
 
   // useEffect to refetch chart data when selectedRange changes
   useEffect(() => {
-    if (!coin) return; // Don't run if no coin is selected
-    handleSearch();
-  }, [selectedRange]); // This runs every time selectedRange changes
+    if (!coinId) return; // Only fetch data if a valid coinId exists
+    fetchChartData(coinId, selectedRange); // Refetch chart data based on the selected range
+  }, [selectedRange, coinId]); // Runs when selectedRange or coinId changes
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
