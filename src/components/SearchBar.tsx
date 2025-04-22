@@ -6,6 +6,7 @@ interface SearchBarProps {
     onChange: (val: string) => void;
     onSearch: () => void;
     allCoins: Coin[];
+    closeDropdown: () => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onSearch, allCoins }) => {
@@ -46,8 +47,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onSearch, allCoi
                 onChange={(e) => onChange(e.target.value)}
                 onFocus={() => setShowDropdown(true)}
                 onKeyDown={(e) => {
-                    if (e.key === 'Enter') onSearch();
-                }}
+                    if (e.key === 'Enter') {
+                      onSearch();
+                      closeDropdown(); // 👈 hide dropdown
+                    }
+                  }}
+                  
                 placeholder="Search cryptocurrency"
                 style={{
                     padding: '0.5rem',
@@ -57,8 +62,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onSearch, allCoi
                 }}
             />
             <button
-                onClick={onSearch}
-                style={{
+                onClick={() => {
+                    onSearch();
+                    closeDropdown(); // 👈 hide dropdown
+                }} style={{
                     marginTop: '0.5rem',
                     padding: '0.5rem 1rem',
                     backgroundColor: '#4F46E5', // Indigo-600

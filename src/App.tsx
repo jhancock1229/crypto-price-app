@@ -13,6 +13,10 @@ const App: React.FC = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [selectedRange, setSelectedRange] = useState('1W');
   const [loadingChart, setLoadingChart] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const closeDropdown = () => setDropdownOpen(false);
+  const openDropdown = () => setDropdownOpen(true);
 
   // In-memory cache to prevent redundant requests
   const chartCache = React.useRef<{ [range: string]: any[] }>({});
@@ -127,7 +131,9 @@ const App: React.FC = () => {
         onChange={setQuery}
         onSearch={handleSearch}
         allCoins={allCoins}
+        closeDropdown={closeDropdown}
       />
+
 
       {currentPrice !== null && (
         <>
