@@ -35,6 +35,11 @@ const App: React.FC = () => {
   };
 
   const handleSearch = async () => {
+    if (!coin) {
+      alert('Please enter a coin name or symbol');
+      return;
+    }
+
     try {
       const res = await fetch(`https://api.coingecko.com/api/v3/coins/list`);
       const coins = await res.json();
@@ -58,7 +63,7 @@ const App: React.FC = () => {
 
   // useEffect to refetch chart data when selectedRange changes
   useEffect(() => {
-    if (!coin) return;
+    if (!coin) return; // Don't run if no coin is selected
     handleSearch();
   }, [selectedRange]); // This runs every time selectedRange changes
 
