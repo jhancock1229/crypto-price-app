@@ -103,10 +103,30 @@ const App: React.FC = () => {
     }
   }, [coinId, selectedRange, fetchChartData]);
 
+  const [allCoins, setAllCoins] = useState<Coin[]>([]);
+
+  useEffect(() => {
+    const fetchAllCoins = async () => {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/coins/list');
+        const coins = await res.json();
+        setAllCoins(coins);
+      } catch (err) {
+        console.error('Error fetching coins:', err);
+      }
+    };
+    fetchAllCoins();
+  }, []);
+
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
       <h1>📊 Crypto Price Tracker</h1>
-      <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} />
+      <SearchBar
+        value={query}
+        onChange={setQuery}
+        onSearch={handleSearch}
+        allCoins={allCoins}
+      />
 
       {currentPrice !== null && (
         <>
