@@ -3,6 +3,7 @@ import SearchBar from './components/SearchBar';
 import PriceDisplay from './components/PriceDisplay';
 import PriceChart from './components/PriceChart';
 import RangeToggle from './components/RangeToggle';
+import { Coin } from './types';
 
 const App: React.FC = () => {
   const [query, setQuery] = useState('');

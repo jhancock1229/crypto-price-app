@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-
-type Coin = {
-  id: string;
-  name: string;
-  symbol: string;
-};
+import { Coin } from '../types';
 
 interface SearchBarProps {
   value: string;
