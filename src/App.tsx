@@ -6,47 +6,44 @@ import RangeToggle from './components/RangeToggle';
 
 const App: React.FC = () => {
   const [coin, setCoin] = useState('');
-  const [coinId, setCoinId] = useState(''); // State to store the coin ID
+  const [coinId, setCoinId] = useState('');
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
-  const [selectedRange, setSelectedRange] = useState('1W'); // Default to 1 week
+  const [selectedRange, setSelectedRange] = useState('1W');
 
-  // Function to fetch chart data based on coinId and selected range
-  const fetchChartData = async (coinId: string, range: string) => {
-    if (!coinId) return; // Return if coinId is empty
+  const fetchChartData = async (id: string, range: string) => {
+    if (!id || !range) return;
 
-    let days = '7'; // Default to 7 days (1 week)
-
+    let days = '7';
     switch (range) {
       case '1D': days = '1'; break;
       case '5D': days = '5'; break;
       case '1W': days = '7'; break;
       case '1M': days = '30'; break;
       case '1Y': days = '365'; break;
-      case 'YTD': days = '365'; break; // Fallback to 365 days for YTD
+      case 'YTD': days = '365'; break;
       case 'ALL': days = 'max'; break;
     }
 
     try {
-      const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`);
+      const res = await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`);
+      if (!res.ok) throw new Error('API failed');
       const json = await res.json();
 
-      // Format the chart data
       const formatted = json.prices.map((p: [number, number]) => ({
         time: new Date(p[0]).toLocaleDateString(),
         price: p[1],
       }));
 
-      setChartData(formatted); // Update chartData
+      setChartData(formatted);
     } catch (err) {
-      console.error(err);
-      alert('Failed to fetch chart data');
+      console.error('Failed to fetch chart data:', err);
+      alert('Failed to fetch chart data.');
     }
   };
 
-  // Function to handle the search
   const handleSearch = async () => {
-    if (!coin) {
+    if (!coin.trim()) {
       alert('Please enter a coin name or symbol');
       return;
     }
@@ -54,33 +51,33 @@ const App: React.FC = () => {
     try {
       const res = await fetch(`https://api.coingecko.com/api/v3/coins/list`);
       const coins = await res.json();
-      const found = coins.find((c: any) => c.name.toLowerCase() === coin.toLowerCase() || c.symbol.toLowerCase() === coin.toLowerCase());
+      const found = coins.find((c: any) =>
+        c.name.toLowerCase() === coin.toLowerCase() ||
+        c.symbol.toLowerCase() === coin.toLowerCase()
+      );
 
       if (!found) {
         alert('Coin not found');
         return;
       }
 
-      setCoinId(found.id); // Store the coinId for future requests
+      const newCoinId = found.id;
+      setCoinId(newCoinId);
 
-      // Fetch the current price of the coin
-      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${found.id}&vs_currencies=usd`);
+      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${newCoinId}&vs_currencies=usd`);
       const priceJson = await priceRes.json();
-      setCurrentPrice(priceJson[found.id].usd);
-
-      // Fetch chart data with default range (1W)
-      await fetchChartData(found.id, selectedRange);
+      setCurrentPrice(priceJson[newCoinId].usd);
     } catch (err) {
-      console.error(err);
-      alert('Failed to fetch data');
+      console.error('Search error:', err);
+      alert('Failed to fetch price data');
     }
   };
 
-  // useEffect to refetch chart data when selectedRange or coinId changes
   useEffect(() => {
-    if (!coinId) return; // Only fetch data if a valid coinId exists
-    fetchChartData(coinId, selectedRange); // Refetch chart data when range or coinId changes
-  }, [selectedRange, coinId]); // Runs when selectedRange or coinId changes
+    if (coinId && selectedRange) {
+      fetchChartData(coinId, selectedRange);
+    }
+  }, [coinId, selectedRange]);
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
