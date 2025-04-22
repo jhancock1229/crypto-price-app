@@ -5,14 +5,15 @@ import PriceChart from './components/PriceChart';
 import RangeToggle from './components/RangeToggle';
 
 const App: React.FC = () => {
-  const [coin, setCoin] = useState('');
+  const [coinInput, setCoinInput] = useState('');
   const [coinId, setCoinId] = useState('');
+  const [coinName, setCoinName] = useState('');
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
   const [selectedRange, setSelectedRange] = useState('1W');
 
   const fetchChartData = async (id: string, range: string) => {
-    if (!id || !range) return;
+    if (!id) return;
 
     let days = '7';
     switch (range) {
@@ -26,6 +27,7 @@ const App: React.FC = () => {
     }
 
     try {
+      console.log(`Fetching chart for ${id}, range: ${range}`);
       const res = await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`);
       if (!res.ok) throw new Error('API failed');
       const json = await res.json();
@@ -37,23 +39,19 @@ const App: React.FC = () => {
 
       setChartData(formatted);
     } catch (err) {
-      console.error('Failed to fetch chart data:', err);
+      console.error('Chart fetch error:', err);
       alert('Failed to fetch chart data.');
     }
   };
 
   const handleSearch = async () => {
-    if (!coin.trim()) {
-      alert('Please enter a coin name or symbol');
-      return;
-    }
-
     try {
       const res = await fetch(`https://api.coingecko.com/api/v3/coins/list`);
       const coins = await res.json();
+
       const found = coins.find((c: any) =>
-        c.name.toLowerCase() === coin.toLowerCase() ||
-        c.symbol.toLowerCase() === coin.toLowerCase()
+        c.name.toLowerCase() === coinInput.toLowerCase() ||
+        c.symbol.toLowerCase() === coinInput.toLowerCase()
       );
 
       if (!found) {
@@ -61,20 +59,21 @@ const App: React.FC = () => {
         return;
       }
 
-      const newCoinId = found.id;
-      setCoinId(newCoinId);
+      setCoinId(found.id);
+      setCoinName(found.name);
 
-      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${newCoinId}&vs_currencies=usd`);
+      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${found.id}&vs_currencies=usd`);
       const priceJson = await priceRes.json();
-      setCurrentPrice(priceJson[newCoinId].usd);
+      setCurrentPrice(priceJson[found.id].usd);
     } catch (err) {
       console.error('Search error:', err);
-      alert('Failed to fetch price data');
+      alert('Failed to search or get price');
     }
   };
 
+  // Fetch chart data when coinId or selectedRange changes
   useEffect(() => {
-    if (coinId && selectedRange) {
+    if (coinId) {
       fetchChartData(coinId, selectedRange);
     }
   }, [coinId, selectedRange]);
@@ -82,11 +81,11 @@ const App: React.FC = () => {
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
       <h1>🪙 Crypto Price Search</h1>
-      <SearchBar value={coin} onChange={setCoin} onSearch={handleSearch} />
+      <SearchBar value={coinInput} onChange={setCoinInput} onSearch={handleSearch} />
 
       {currentPrice !== null && (
         <>
-          <PriceDisplay coin={coin} price={currentPrice} />
+          <PriceDisplay coin={coinName} price={currentPrice} />
           <RangeToggle selected={selectedRange} onSelect={setSelectedRange} />
           <PriceChart data={chartData} />
         </>
