@@ -1,25 +1,41 @@
+import React from 'react';
+
 interface SearchBarProps {
-    value: string;
-    onChange: (val: string) => void;
-    onSearch: () => void;
-  }
-  
-  const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onSearch }) => {
-    return (
-      <div style={{ marginTop: '1rem' }}>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter coin name or symbol (e.g. bitcoin, eth)"
-          style={{ padding: '0.5rem', fontSize: '1rem', width: '250px' }}
-        />
-        <button onClick={onSearch} style={{ marginLeft: '1rem', padding: '0.5rem 1rem', fontSize: '1rem' }}>
-          Search
-        </button>
-      </div>
-    );
+  value: string;
+  onChange: (value: string) => void;
+  onSearch: () => void;
+}
+
+const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onSearch }) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onSearch();
+    }
   };
-  
-  export default SearchBar;
-  
+
+  return (
+    <div style={{ marginBottom: '1rem' }}>
+      <input
+        type="text"
+        placeholder="Search cryptocurrency..."
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyPress}
+        style={{ padding: '0.5rem', fontSize: '1rem', width: '250px' }}
+      />
+      <button
+        onClick={onSearch}
+        style={{
+          padding: '0.5rem 1rem',
+          marginLeft: '0.5rem',
+          fontSize: '1rem',
+          cursor: 'pointer',
+        }}
+      >
+        Search
+      </button>
+    </div>
+  );
+};
+
+export default SearchBar;
