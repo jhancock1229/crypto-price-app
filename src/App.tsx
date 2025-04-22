@@ -11,9 +11,22 @@ const App: React.FC = () => {
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
   const [selectedRange, setSelectedRange] = useState('1W');
+  const [loadingChart, setLoadingChart] = useState(false);
+
+  // In-memory cache to prevent redundant requests
+  const chartCache = React.useRef<{ [range: string]: any[] }>({});
+
+  const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
   const fetchChartData = useCallback(async (id: string, range: string) => {
     if (!id) return;
+
+    // Use cache if available
+    if (chartCache.current[range]) {
+      console.log(`Using cached chart data for ${range}`);
+      setChartData(chartCache.current[range]);
+      return;
+    }
 
     let days = '7';
     switch (range) {
@@ -27,11 +40,12 @@ const App: React.FC = () => {
     }
 
     try {
-      const url = `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`;
-      console.log('Fetching chart from:', url);
+      setLoadingChart(true);
+      await delay(1000); // slow down fetches to avoid API throttling
 
+      const url = `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`Chart fetch failed for ${id}`);
+      if (!res.ok) throw new Error(`Failed chart fetch for ${id}`);
 
       const json = await res.json();
       const formatted = json.prices.map((p: [number, number]) => ({
@@ -39,10 +53,13 @@ const App: React.FC = () => {
         price: p[1],
       }));
 
+      chartCache.current[range] = formatted;
       setChartData(formatted);
     } catch (err) {
       console.error(err);
-      alert(`Failed to fetch chart data. Please try again.`);
+      alert('Error fetching chart data. Please wait a few seconds and try again.');
+    } finally {
+      setLoadingChart(false);
     }
   }, []);
 
@@ -70,11 +87,13 @@ const App: React.FC = () => {
       const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${newCoinId}&vs_currencies=usd`);
       const priceJson = await priceRes.json();
 
-      if (!priceJson[newCoinId]) throw new Error('Price fetch returned no data');
+      if (!priceJson[newCoinId]) throw new Error('Price not found');
       setCurrentPrice(priceJson[newCoinId].usd);
+
+      chartCache.current = {}; // clear previous cache
     } catch (err) {
       console.error(err);
-      alert('Search failed. Check network or try again.');
+      alert('Failed to search for coin.');
     }
   };
 
@@ -86,13 +105,16 @@ const App: React.FC = () => {
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>🔍 Crypto Price Search</h1>
+      <h1>📊 Crypto Price Tracker</h1>
       <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} />
+
       {currentPrice !== null && (
         <>
           <PriceDisplay coin={coinName} price={currentPrice} />
-          <RangeToggle selected={selectedRange} onSelect={setSelectedRange} />
-          <PriceChart data={chartData} />
+          <RangeToggle selected={selectedRange} onSelect={(range) => {
+            if (!loadingChart) setSelectedRange(range);
+          }} />
+          {loadingChart ? <p>Loading chart...</p> : <PriceChart data={chartData} />}
         </>
       )}
     </div>
