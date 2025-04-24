@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import SearchBar from './components/SearchBar';
 import PriceChart from './components/PriceChart';
-import { getDateRangeLabel } from './utils/dateUtils';
+// import { getDateRangeLabel } from './utils/dateUtils';
 
 
 interface Coin {
@@ -15,7 +15,7 @@ function App() {
   const [coin, setCoin] = useState<Coin | null>(null);
   const [allCoins, setAllCoins] = useState<Coin[]>([]);
   const [selectedRange, setSelectedRange] = useState('1');
-  const dateRangeLabel = getDateRangeLabel(selectedRange);
+  // const dateRangeLabel = getDateRangeLabel(selectedRange);
 
   useEffect(() => {
     const fetchCoins = async () => {
@@ -82,14 +82,7 @@ function App() {
             ))}
           </div>
           <PriceChart coinId={coin.id} range={selectedRange} />
-          {coin && (
-            <>
-              <PriceChart coinId={coin.id} range={selectedRange} />
-              <p className="text-center text-gray-500 text-sm mt-2">
-                Showing data for: <span className="font-medium">{dateRangeLabel}</span>
-              </p>
-            </>
-          )}
+       
 
         </>
       )}
