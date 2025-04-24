@@ -15,6 +15,7 @@ function App() {
   const [coin, setCoin] = useState<Coin | null>(null);
   const [allCoins, setAllCoins] = useState<Coin[]>([]);
   const [selectedRange, setSelectedRange] = useState('1');
+  const dateRangeLabel = getDateRangeLabel(selectedRange);
 
   useEffect(() => {
     const fetchCoins = async () => {
