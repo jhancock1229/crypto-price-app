@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import SearchBar from './components/SearchBar';
 import PriceChart from './components/PriceChart';
-import { getDaysFromRange, getDateRangeLabel } from './utils/dateUtils';
+import { getDateRangeLabel } from './utils/dateUtils';
 
 
 interface Coin {
