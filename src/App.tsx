@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import SearchBar from './components/SearchBar';
 import PriceChart from './components/PriceChart';
+import { getDaysFromRange, getDateRangeLabel } from './utils/dateUtils';
+
 
 interface Coin {
   id: string;
@@ -70,15 +72,24 @@ function App() {
                 }}
               >
                 {range === '1' ? '1 Day' :
-                 range === '5' ? '5 Days' :
-                 range === '7' ? '1 Week' :
-                 range === '30' ? '1 Month' :
-                 range === '365' ? '1 Year' :
-                 range === 'ytd' ? 'YTD' : 'All'}
+                  range === '5' ? '5 Days' :
+                    range === '7' ? '1 Week' :
+                      range === '30' ? '1 Month' :
+                        range === '365' ? '1 Year' :
+                          range === 'ytd' ? 'YTD' : 'All'}
               </button>
             ))}
           </div>
           <PriceChart coinId={coin.id} range={selectedRange} />
+          {coin && (
+            <>
+              <PriceChart coinId={coin.id} range={selectedRange} />
+              <p className="text-center text-gray-500 text-sm mt-2">
+                Showing data for: <span className="font-medium">{dateRangeLabel}</span>
+              </p>
+            </>
+          )}
+
         </>
       )}
     </div>
